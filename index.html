@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>R8</title>
+<meta name="apple-mobile-web-app-title" content="R8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<!-- このhrefを選択に合わせてJavaScriptで差し替える -->
+<link id="touch-icon" rel="apple-touch-icon" href="icons/r8-ai-gothic.png">
+<style>
+  :root {
+    --bg: #EEF0EC; --ink: #1D2320; --sub: #5E6862; --line: #CDD2CC; --card: #FFFFFF;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1A1E1C; --ink: #E8ECE9; --sub: #9BA59F; --line: #343B37; --card: #232826; }
+  }
+  *, *::before, *::after { box-sizing: inherit; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif;
+    line-height: 1.7;
+  }
+  main { max-width: 26rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+  h1 { font-size: 1.25rem; margin: 0 0 .25rem; }
+  .lead { color: var(--sub); font-size: .9rem; margin: 0 0 1.75rem; }
+
+  .preview { display: flex; justify-content: center; margin-bottom: 2rem; }
+  .preview img {
+    width: 9rem; height: 9rem; border-radius: 22.5%;
+    box-shadow: 0 6px 18px rgba(0,0,0,.18);
+    transition: transform .15s ease;
+  }
+  .preview img.bump { transform: scale(.94); }
+
+  h2 { font-size: .95rem; margin: 0 0 .6rem; }
+  .group { margin-bottom: 1.5rem; }
+  .swatches { display: flex; gap: .75rem; }
+  .swatch {
+    width: 3rem; height: 3rem; border-radius: 50%; border: 3px solid transparent;
+    outline: 2px solid transparent; outline-offset: 2px; cursor: pointer; padding: 0;
+  }
+  .swatch[aria-pressed="true"] { outline-color: var(--ink); }
+  .fonts { display: flex; gap: .5rem; }
+  .font-btn {
+    flex: 1; padding: .7rem; font-size: 1.1rem; border-radius: .6rem;
+    border: 1px solid var(--line); background: var(--card); color: var(--ink); cursor: pointer;
+  }
+  .font-btn[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+  .gothic { font-family: "Hiragino Sans", "Noto Sans JP", sans-serif; font-weight: 700; }
+  .mincho { font-family: "Hiragino Mincho ProN", "Noto Serif JP", serif; font-weight: 900; }
+  button:focus-visible { outline: 3px solid #3B7BD9; outline-offset: 2px; }
+
+  .steps { background: var(--card); border: 1px solid var(--line); border-radius: .75rem; padding: 1rem 1.25rem; }
+  .steps ol { margin: 0; padding-left: 1.25rem; }
+  .steps li { margin: .2rem 0; }
+  .status { font-size: .8rem; color: var(--sub); margin-top: 1rem; word-break: break-all; }
+</style>
+</head>
+<body>
+<main>
+  <h1>令和アイコンのテスト</h1>
+  <p class="lead">色と書体を選んでからホーム画面に追加すると、そのデザインのアイコンになります。</p>
+
+  <div class="preview"><img id="preview" src="icons/r8-ai-gothic.png" alt="選んだアイコンのプレビュー"></div>
+
+  <div class="group">
+    <h2>色</h2>
+    <div class="swatches" id="colors">
+      <button class="swatch" data-color="ai" style="background:#1F3A5F" aria-label="藍" aria-pressed="true"></button>
+      <button class="swatch" data-color="shu" style="background:#D2452F" aria-label="朱" aria-pressed="false"></button>
+      <button class="swatch" data-color="take" style="background:#3E8E5E" aria-label="若竹" aria-pressed="false"></button>
+      <button class="swatch" data-color="yamabuki" style="background:#F2B705" aria-label="山吹" aria-pressed="false"></button>
+    </div>
+  </div>
+
+  <div class="group">
+    <h2>書体</h2>
+    <div class="fonts" id="fonts">
+      <button class="font-btn gothic" data-font="gothic" aria-pressed="true">ゴシック</button>
+      <button class="font-btn mincho" data-font="mincho" aria-pressed="false">明朝</button>
+    </div>
+  </div>
+
+  <div class="steps">
+    <h2>ホーム画面への追加</h2>
+    <ol>
+      <li>Safariの下にある共有ボタン（□に↑）をタップ</li>
+      <li>「ホーム画面に追加」を選ぶ</li>
+      <li>アイコンを確認して「追加」</li>
+    </ol>
+  </div>
+
+  <p class="status" id="status"></p>
+</main>
+
+<script>
+  const state = { color: "ai", font: "gothic" };
+  const link = document.getElementById("touch-icon");
+  const preview = document.getElementById("preview");
+  const status = document.getElementById("status");
+
+  function apply() {
+    const src = `icons/r8-${state.color}-${state.font}.png`;
+    link.setAttribute("href", src);   // ← ホーム画面用アイコンを差し替え
+    preview.src = src;                 // 同じ画像をプレビューにも表示
+    preview.classList.add("bump");
+    setTimeout(() => preview.classList.remove("bump"), 150);
+    status.textContent = "設定中のアイコン: " + link.getAttribute("href");
+  }
+
+  function wire(groupId, key) {
+    const buttons = document.querySelectorAll(`#${groupId} button`);
+    buttons.forEach(btn => btn.addEventListener("click", () => {
+      buttons.forEach(b => b.setAttribute("aria-pressed", "false"));
+      btn.setAttribute("aria-pressed", "true");
+      state[key] = btn.dataset[key];
+      apply();
+    }));
+  }
+
+  wire("colors", "color");
+  wire("fonts", "font");
+  apply();
+</script>
+</body>
+</html>
