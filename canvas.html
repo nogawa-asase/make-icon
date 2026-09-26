@@ -75,6 +75,9 @@
   .dots span { width: .45rem; height: .45rem; border-radius: 50%; background: var(--line); transition: background .2s; }
   .dots span.on { background: var(--ink); }
 
+  .check { display: flex; align-items: center; gap: .5rem; margin-top: .9rem; font-size: .95rem; cursor: pointer; }
+  .check input { width: 1.25rem; height: 1.25rem; margin: 0; accent-color: var(--ink); }
+
   /* 書体 */
   .fonts { display: grid; grid-template-columns: repeat(2, 1fr); gap: .5rem; }
   .font-btn {
@@ -110,6 +113,7 @@
     <h2>色</h2>
     <div class="palette" id="palette"></div>
     <div class="dots" id="dots"></div>
+    <label class="check"><input type="checkbox" id="gradient"> グラデーション</label>
   </div>
 
   <div class="group">
@@ -168,9 +172,10 @@
 
   const state = {
     n: 1,
-    texts: ["R8", "", ""],
+    texts: ["A1", "", ""],
     aligns: ["center", "center", "center"],
     bg: TONES[0].colors[6],
+    gradient: false,
     font: 0
   };
 
@@ -191,13 +196,28 @@
     return cWhite >= cDark ? "#FFFFFF" : "#1F1F1F";
   }
 
+  // 2色を割合tで混ぜる（グラデーションの明るい側・暗い側を作る）
+  function mix(a, b, t) {
+    const p = h => [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16));
+    const A = p(a), B = p(b);
+    return "#" + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, "0")).join("");
+  }
+
   // ---- 描画 ----
   function fontString(f, px) { return `${f.weight} ${px}px "${f.family}"`; }
 
   function draw() {
     const f = FONTS[state.font];
     const lines = state.texts.slice(0, state.n);
-    ctx.fillStyle = state.bg;
+    if (state.gradient) {
+      // iPhoneのアイコン風：上を明るく、下を少し暗く
+      const g = ctx.createLinearGradient(0, 0, 0, SIZE);
+      g.addColorStop(0, mix(state.bg, "#FFFFFF", 0.28));
+      g.addColorStop(1, mix(state.bg, "#000000", 0.12));
+      ctx.fillStyle = g;
+    } else {
+      ctx.fillStyle = state.bg;
+    }
     ctx.fillRect(0, 0, SIZE, SIZE);
 
     const margin = SIZE * 0.12;
@@ -336,6 +356,8 @@
       box.append(b);
     });
   }
+
+  $("gradient").addEventListener("change", e => { state.gradient = e.target.checked; apply(); });
 
   renderLines();
   renderPalette();
