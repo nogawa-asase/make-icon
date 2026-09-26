@@ -14,13 +14,13 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@900&family=Noto+Serif+JP:wght@900&family=M+PLUS+Rounded+1c:wght@800&family=Dela+Gothic+One&family=Yuji+Syuku&family=DotGothic16&family=RocknRoll+One&family=Rampart+One&family=Hachi+Maru+Pop&family=Yusei+Magic&display=swap">
 <style>
   :root {
-    --bg: #EEF0EC; --ink: #1D2320; --sub: #5E6862; --line: #CDD2CC; --card: #FFFFFF; --bar: rgba(238,240,236,.88);
+    --bg: #EEF0EC; --ink: #1D2320; --sub: #5E6862; --line: #CDD2CC; --card: #FFFFFF;
     box-sizing: border-box;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #1A1E1C; --ink: #E8ECE9; --sub: #9BA59F; --line: #343B37; --card: #232826; --bar: rgba(26,30,28,.88); }
+    :root { --bg: #1A1E1C; --ink: #E8ECE9; --sub: #9BA59F; --line: #343B37; --card: #232826; }
   }
   *, *::before, *::after { box-sizing: inherit; }
   body {
@@ -38,18 +38,6 @@
 
   button { font-family: inherit; color: var(--ink); cursor: pointer; }
   button:focus-visible, input:focus-visible { outline: 3px solid #3B7BD9; outline-offset: 2px; }
-
-  /* スクロールしたとき上に出る小さいプレビュー */
-  .mini {
-    position: fixed; top: 0; left: 0; right: 0; z-index: 10;
-    display: flex; justify-content: center;
-    padding: calc(env(safe-area-inset-top, 0px) + .5rem) 0 .5rem;
-    background: var(--bar); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-    border-bottom: 1px solid var(--line);
-    opacity: 0; pointer-events: none; transition: opacity .2s;
-  }
-  .mini.show { opacity: 1; }
-  .mini img { width: 3.5rem; height: 3.5rem; border-radius: 22.5%; box-shadow: 0 3px 10px rgba(0,0,0,.18); }
 
   /* 行数 */
   .seg { display: flex; border: 1px solid var(--line); border-radius: .6rem; overflow: hidden; margin-bottom: .75rem; }
@@ -108,12 +96,9 @@
 </style>
 </head>
 <body>
-<div class="mini" id="mini" aria-hidden="true"><img id="mini-img" alt=""></div>
 <main>
   <h1>メモ代わりのアイコンを作る</h1>
   <p class="lead">文字と色と書体を自分で決めたアイコンを、ホーム画面に置けます</p>
-
-  <div class="preview"><img id="preview" alt="作ったアイコンのプレビュー"></div>
 
   <div class="group">
     <h2>文字</h2>
@@ -124,6 +109,8 @@
     </div>
     <div id="lines"></div>
   </div>
+
+  <div class="preview"><img id="preview" alt="作ったアイコンのプレビュー"></div>
 
   <div class="group">
     <h2>色</h2>
@@ -322,7 +309,6 @@
     $("touch-icon").setAttribute("href", url);
     $("fav-icon").setAttribute("href", url);
     $("preview").src = url;
-    $("mini-img").src = url;
 
     const name = state.texts.slice(0, state.n).filter(Boolean).join(" ") || "文字アイコン";
     document.title = name;
@@ -451,18 +437,6 @@
       html = `<p>スマートフォンでこのページを開くと、ホーム画面に追加する手順が表示されます。</p>`;
     }
     $("steps-body").innerHTML = html;
-  }
-
-  // ---- 大きいプレビューが画面外に出たら、上に小さいプレビューを出す ----
-  const mini = $("mini");
-  new IntersectionObserver(entries => {
-    mini.classList.toggle("show", !entries[0].isIntersecting);
-  }).observe($("preview"));
-  // キーボード表示中も画面の上端に来るよう位置を合わせる
-  if (window.visualViewport) {
-    const follow = () => { mini.style.transform = `translateY(${visualViewport.offsetTop}px)`; };
-    visualViewport.addEventListener("resize", follow);
-    visualViewport.addEventListener("scroll", follow);
   }
 
   renderSteps();
